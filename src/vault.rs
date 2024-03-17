@@ -1,13 +1,11 @@
 #![allow(dead_code)]
 
-use serde_json::to_vec_pretty;
+use std::io::Read;
 use std::io::Write;
-use std::io::{Seek, SeekFrom};
 // use std::io::Write;
 const PATH_ROOT: &str = "./my_vault";
 const PASS_FILE_NAME: &str = "/secret.json";
 
-//Todo open , parse and save json.
 // add new inputs
 // encrypt.
 
@@ -19,11 +17,8 @@ const PASS_FILE_NAME: &str = "/secret.json";
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 struct PasswordEntry {
-    // #[serde(default)]
     website: String,
-    // #[serde(default)]
     username: String,
-    // #[serde(default)]
     password: String,
 }
 
@@ -36,7 +31,7 @@ pub struct Vault {
 }
 
 impl Vault {
-    pub fn new(name: &str) -> Result<Vault, std::io::Error> {
+    pub fn new(name: &str) -> anyhow::Result<Vault> {
         let mut v = Vault {
             name: name.to_string(),
             path: "./".to_string(),
@@ -45,25 +40,23 @@ impl Vault {
         };
         v.create_files()?;
         v.passwords = v.parse()?;
-        // v.parse()?; v.passwords.push(PasswordEntry {
-        //     website: "lol.com".into(),
-        //     username: "yo".into(),
-        //     password: "pass".into(),
-        // });
         Ok(v)
     }
 
-    //Todo if file is empty then return err , if file is {} then dont parse
-    fn parse(&self) -> Result<Vec<PasswordEntry>, serde_json::Error> {
+    fn parse(&self) -> anyhow::Result<Vec<PasswordEntry>> {
         let secret_file_path = self.get_secret_path(false);
-        let file = std::fs::File::open(secret_file_path).expect("No file found");
-        serde_json::from_reader(file)
-        //Todo if the json is empty or [{}] then return an empty Vec<PasswordEntry>::new()
+        let mut file = std::fs::File::open(secret_file_path)?;
+        let mut contents = String::new();
+        file.read_to_string(&mut contents)?;
+
+        if contents.is_empty() || contents == "[{}]" {
+            return Ok(Vec::new());
+        }
+        let a = serde_json::from_reader(file)?;
+        Ok(a)
     }
 
-    // Create the file, it fails if doesn't exist so we match the error and return Ok() instead
-    // , if another kind of error then we propagate it.
-    pub fn create_files(&self) -> std::io::Result<()> {
+    pub fn create_files(&self) -> anyhow::Result<()> {
         std::fs::create_dir_all(&self.get_secret_path(true))?;
 
         let mut fd = std::fs::OpenOptions::new()
@@ -85,5 +78,12 @@ impl Vault {
         }
     }
 
+    pub fn new_entry(&mut self, website: String, username: String, password: String) {
+        self.passwords.push(PasswordEntry {
+            website: website,
+            username: username,
+            password: password,
+        });
+    }
     // pub fn new_password(&mut self, key: &str, value: &str) -> Result<(), std::io::Error> {}
 }
