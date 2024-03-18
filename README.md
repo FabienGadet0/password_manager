@@ -1,5 +1,8 @@
 # password_manager
 
+A small password manager i made for training the Rust language.
+Unfinished
+
 - **Functionality:** Store passwords securely using encryption and manage them with features like adding, deleting, and viewing entries.
 - **Concepts:**
   - Data Structures: Choose appropriate data structures (structs, enums) to represent password entries efficiently.
