@@ -3,11 +3,9 @@ use vault::*;
 
 fn main() {
     let mut v = Vault::new("test").unwrap();
-    v.new_entry("lol".into(), "asdasdasd".into(), "wwoqkeoqwe".into());
-    println!("{:?}", v);
-    //
-    // v.create_vault().unwrap();
-    // v.parse().unwrap();
-    // v.new_password("test", "camarche").unwrap();
-    // v.show_pass();
+    v.new_entry("lol", "asdasdasd", "wwoqkeoqwe").unwrap();
+    // v.new_entry("lol", "asdasdasd", "wwoqkeoqwe").unwrap();
+    // v.new_entry("xd", "asdasdasd", "wwoqkeoqwe").unwrap();
+    // v.new_entry("leumaop", "asdasdasd", "wwoqkeoqwe").unwrap();
+    println!("{:?}", v)
 }

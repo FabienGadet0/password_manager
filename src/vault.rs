@@ -1,15 +1,15 @@
 #![allow(dead_code)]
 
+use serde_json::from_str;
+use std::collections::HashMap;
 use std::io::Read;
 use std::io::Write;
-// use std::io::Write;
-const PATH_ROOT: &str = "./my_vault";
+
+const PATH_ROOT: &str = "./my_vaults";
 const PASS_FILE_NAME: &str = "/secret.json";
 
-// encrypt.
-
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
-struct PasswordEntry {
+pub struct PasswordEntry {
     website: String,
     username: String,
     password: String,
@@ -20,7 +20,7 @@ pub struct Vault {
     name: String,
     path: String,
     encoding: String,
-    passwords: Vec<PasswordEntry>,
+    passwords: HashMap<String, PasswordEntry>,
 }
 
 impl Vault {
@@ -29,10 +29,10 @@ impl Vault {
             name: name.to_string(),
             path: "./".to_string(),
             encoding: "".to_string(),
-            passwords: Vec::new(),
+            passwords: HashMap::new(),
         };
         v.create_files()?;
-        v.passwords = v.parse().expect("Error parsing Json file");
+        v.parse()?;
         Ok(v)
     }
 
@@ -43,30 +43,53 @@ impl Vault {
         writer.flush()?;
         Ok(())
     }
-    fn parse(&self) -> Result<Vec<PasswordEntry>, anyhow::Error> {
+
+    pub fn parse(&mut self) -> anyhow::Result<()> {
         let secret_file_path = self.get_secret_path(false);
+
         let mut file = std::fs::File::open(secret_file_path)?;
         let mut contents = String::new();
         file.read_to_string(&mut contents)?;
-
-        // if len is 5 then the array is empty
-        if contents.is_empty() || contents.len() == 5 {
-            return Ok(Vec::new());
+        if contents.is_empty() || contents.len() <= 5 {
+            return Ok(());
         }
-        let a = serde_json::from_reader(file)?;
-        Ok(a)
+
+        let json_value: serde_json::Value = from_str(&contents)?;
+
+        for (key, value) in json_value.as_object().unwrap().iter() {
+            let new_entry = PasswordEntry {
+                website: value["website"].as_str().unwrap().to_owned(),
+                username: value["website"].as_str().unwrap().to_owned(),
+                password: value["password"].as_str().unwrap().to_owned(),
+            };
+            self.passwords.entry(key.clone()).or_insert(new_entry);
+        }
+
+        Ok(())
     }
 
-    pub fn new_entry(&mut self, website: String, username: String, password: String) {
-        self.passwords.push(PasswordEntry {
-            website,
-            username,
-            password,
-        });
-        self.dump().ok();
+    pub fn new_entry(
+        &mut self,
+        website: &str,
+        username: &str,
+        password: &str,
+    ) -> anyhow::Result<()> {
+        self.passwords
+            .entry(website.to_string())
+            .or_insert(PasswordEntry {
+                website: website.to_string(),
+                username: username.to_string(),
+                password: password.to_string(),
+            });
+
+        self.dump()
     }
 
-    // Init stuff
+    pub fn get_entry(&self, website: &str) -> std::option::Option<&PasswordEntry> {
+        self.passwords.get(website)
+    }
+
+    // Create directories , create the secret file and write [{}] if it's empty to initialize it.
     pub fn create_files(&self) -> anyhow::Result<()> {
         std::fs::create_dir_all(&self.get_secret_path(true))?;
 
@@ -77,7 +100,7 @@ impl Vault {
 
         // Write "{}" to the file if it's empty
         if fd.metadata()?.len() == 0 {
-            writeln!(fd, "[{{}}]")?;
+            writeln!(fd, "{{}}")?;
         }
         Ok(())
     }
