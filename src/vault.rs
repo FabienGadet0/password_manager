@@ -36,6 +36,10 @@ impl Vault {
         Ok(v)
     }
 
+    pub fn print_passwords(&self) {
+        println!("{:?}", self.passwords)
+    }
+
     fn dump(&self) -> Result<(), anyhow::Error> {
         let file = std::fs::File::create(&self.get_secret_path(false))?;
         let mut writer = std::io::BufWriter::new(file);
