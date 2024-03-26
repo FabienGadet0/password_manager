@@ -17,3 +17,7 @@ Cargo.lock
 # Added by cargo
 
 /target
+database/local.db
+database/local.db-shm
+database/local.db-wal
+.go-tetris.log

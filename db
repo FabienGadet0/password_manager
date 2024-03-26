@@ -1,0 +1,4 @@
+turso dev --db-file database/local.db
+
+turso db shell http://127.0.0.1:8080
+
