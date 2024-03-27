@@ -1,16 +1,14 @@
 #![allow(dead_code)]
 
-mod cipher;
-mod db;
 mod ui;
-mod vault;
+mod vault_db;
 
-use vault::*;
-
-fn main() {
-    db::run();
-    // ui::run().unwrap();
-    // let mut v = Vault::new("test").unwrap();
-    // v.new_entry("lol", "asdasdasd", "wwoqkeoqwe").unwrap();
-    // v.print_passwords()
+use vault_db::*;
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let v: Vault = Vault::new("test").await.unwrap();
+    println!("{:?}", v.get_entry("lol").await.unwrap());
+    // v.new_entry("lol", "asdasdasd", "wwoqkeoqwe").await.unwrap();
+    // v.print_passwords().await.unwrap();
+    Ok(())
 }
